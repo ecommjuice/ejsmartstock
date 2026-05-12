@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <n>smartstock</n>
+    <displayName><![CDATA[EJ Smart stock]]></displayName>
+    <version><![CDATA[1.1.0]]></version>
+    <description><![CDATA[Gestion de stock avanzada: escaner EAN13, inventario fisico, historial con filtros, estado e importacion masiva CSV]]></description>
+    <author><![CDATA[Ecommjuice]]></author>
+    <tab><![CDATA[administration]]></tab>
+    <is_configurable>0</is_configurable>
+    <need_instance>0</need_instance>
+    <limited_countries></limited_countries>
+</module>
