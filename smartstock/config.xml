@@ -2,7 +2,7 @@
 <module>
     <n>smartstock</n>
     <displayName><![CDATA[EJ Smart stock]]></displayName>
-    <version><![CDATA[1.1.0]]></version>
+    <version><![CDATA[1.2.0]]></version>
     <description><![CDATA[Gestion de stock avanzada: escaner EAN13, inventario fisico, historial con filtros, estado e importacion masiva CSV]]></description>
     <author><![CDATA[Ecommjuice]]></author>
     <tab><![CDATA[administration]]></tab>

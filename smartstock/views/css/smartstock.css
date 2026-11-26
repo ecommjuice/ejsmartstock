@@ -901,3 +901,35 @@ body:not(.ps-bo-rebrand) .bootstrap .ss-topbar a.ss-nav-item.active {
   .ss-table-card { box-shadow: none; border: 1px solid #C1C1C1; }
   .ss-wrap { background: #FFFFFF; padding: 0; }
 }
+
+/* ── Alta rápida de producto (1.2.0) ─────────────────────── */
+.ss-create-card {
+  background: var(--ss-card);
+  border-radius: var(--ss-r-lg);
+  box-shadow: var(--ss-shadow);
+  border: 2px solid var(--ss-accent2);
+  margin-bottom: 16px;
+  animation: slideDown .25s ease-out;
+}
+.ss-create-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--ss-dark);
+  color: #fff;
+  border-radius: var(--ss-r-lg) var(--ss-r-lg) 0 0;
+}
+.ss-create-header strong { display: block; font-family: var(--ss-heading); font-size: 18px; color: var(--ss-accent); }
+.ss-create-header small { display: block; color: #ddd; margin-top: 2px; }
+#create-form { padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.ss-create-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+.ss-create-filter { margin-bottom: 6px; }
+#c-cat { height: auto; }
+.ss-create-check { display: flex; gap: 8px; align-items: flex-start; font-weight: 500; margin: 8px 0 12px; cursor: pointer; }
+.ss-create-check input { margin-top: 3px; }
+.ss-page-header #btn-new-product { align-self: center; white-space: nowrap; }
+@media (max-width: 600px) {
+  .ss-create-grid { grid-template-columns: minmax(0, 1fr); }
+}

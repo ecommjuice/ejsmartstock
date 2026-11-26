@@ -4,7 +4,7 @@
  * PrestaShop 8.x compatible
  *
  * @author    Tu Tienda
- * @version   1.1.0
+ * @version   1.2.0
  * @license   MIT
  */
 
@@ -18,7 +18,7 @@ class SmartStock extends Module
     {
         $this->name          = 'smartstock';
         $this->tab           = 'administration';
-        $this->version       = '1.1.0';
+        $this->version       = '1.2.0';
         $this->author        = 'Ecommjuice';
         $this->need_instance = 0;
         $this->bootstrap     = true;

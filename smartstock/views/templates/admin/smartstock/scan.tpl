@@ -10,6 +10,7 @@
       <h1 class="ss-page-title">Escáner de stock</h1>
       <p class="ss-page-sub">Escanea EAN13 o busca por nombre · referencia · EAN</p>
     </div>
+    {if $can_create}<button type="button" class="ss-search-btn" id="btn-new-product">+ Producto nuevo</button>{/if}
   </div>
 
   <div class="ss-scan-layout">
@@ -90,6 +91,66 @@
         </div>
 
       </div>
+
+      {* Alta rápida de producto (cuando el código no existe) *}
+      {if $can_create}
+      <div class="ss-create-card" id="create-card" style="display:none">
+        <div class="ss-create-header">
+          <div>
+            <strong>Producto nuevo</strong>
+            <small id="create-sub">Este código no está en la tienda. Crea su ficha:</small>
+          </div>
+          <button type="button" class="ss-clear-btn" id="create-cancel" title="Cancelar">✕</button>
+        </div>
+        <form id="create-form" autocomplete="off">
+          <div class="ss-ctrl-row">
+            <label class="ss-label" for="c-name">Nombre *</label>
+            <input type="text" id="c-name" name="name" class="ss-text-input" maxlength="128" required placeholder="Ej: Puzzle 1000 piezas Universidad" />
+          </div>
+          <div class="ss-create-grid">
+            <div class="ss-ctrl-row">
+              <label class="ss-label" for="c-ean">EAN</label>
+              <input type="text" id="c-ean" name="ean13" class="ss-text-input" inputmode="numeric" maxlength="13" />
+            </div>
+            <div class="ss-ctrl-row">
+              <label class="ss-label" for="c-ref">Referencia</label>
+              <input type="text" id="c-ref" name="reference" class="ss-text-input" maxlength="64" />
+            </div>
+            <div class="ss-ctrl-row">
+              <label class="ss-label" for="c-price">PVP con IVA (€) *</label>
+              <input type="number" id="c-price" name="price_ttc" class="ss-text-input" step="0.01" min="0" required placeholder="0,00" />
+            </div>
+            <div class="ss-ctrl-row">
+              <label class="ss-label" for="c-tax">IVA</label>
+              <select id="c-tax" name="id_tax_rules_group" class="ss-text-input"></select>
+            </div>
+            <div class="ss-ctrl-row">
+              <label class="ss-label" for="c-qty">Stock inicial</label>
+              <input type="number" id="c-qty" name="qty" class="ss-text-input" min="0" value="1" />
+            </div>
+            <div class="ss-ctrl-row">
+              <label class="ss-label" for="c-cost">Precio de compra (€)</label>
+              <input type="number" id="c-cost" name="purchase_price" class="ss-text-input" step="0.01" min="0" placeholder="0,00" />
+            </div>
+          </div>
+          <div class="ss-ctrl-row">
+            <label class="ss-label" for="c-cat-filter">Categoría *</label>
+            <input type="search" id="c-cat-filter" class="ss-text-input ss-create-filter" placeholder="Filtrar categorías…" />
+            <select id="c-cat" name="id_category" class="ss-text-input" size="6" required></select>
+          </div>
+          <div class="ss-ctrl-row">
+            <label class="ss-label" for="c-brand">Marca</label>
+            <select id="c-brand" name="id_manufacturer" class="ss-text-input"></select>
+          </div>
+          <div class="ss-ctrl-row">
+            <label class="ss-label" for="c-photo">Foto</label>
+            <input type="file" id="c-photo" name="photo" accept="image/*" capture="environment" class="ss-text-input" />
+          </div>
+          <label class="ss-create-check"><input type="checkbox" id="c-online" checked /> Mostrar en la tienda online (si lo desmarcas, solo se vende en la tienda física)</label>
+          <button type="submit" class="ss-apply-btn" id="create-submit"><span id="create-btn-text">Crear producto</span></button>
+        </form>
+      </div>
+      {/if}
 
       <div class="ss-feedback" id="feedback"></div>
 
@@ -182,11 +243,88 @@
         setScanning(false);
         eanInput.value = '';
         if (d.success) {
+          hideCreate();
           loadProduct(d.product);
+        } else if (d.not_found && CAN_CREATE) {
+          showCreate(d.ean || ean);
         } else {
           flashFeedback('error', d.error);
         }
       }).catch(err => { setScanning(false); flashFeedback('error', err.message || 'Error de red'); });
+  }
+
+  /* ── Alta rápida de producto ────────────────────────────── */
+  const CAN_CREATE = {/literal}{if $can_create}true{else}false{/if}{literal};
+  const FORM_DATA  = {/literal}{$create_form|json_encode nofilter}{literal};
+  const createCard = id('create-card');
+
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem('ss_' + k); localStorage.setItem('ss_' + k, v); } catch (e) { return null; } }
+
+  function fillSelect(sel, items, selected, emptyLabel) {
+    sel.innerHTML = (emptyLabel ? `<option value="0">${emptyLabel}</option>` : '') +
+      items.map(o => `<option value="${o.id}"${String(o.id) === String(selected) ? ' selected' : ''}>${escapeHtml(o.label)}${o.rate !== undefined ? ' (' + o.rate + ' %)' : ''}</option>`).join('');
+  }
+
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+  if (CAN_CREATE) {
+    fillSelect(id('c-tax'), FORM_DATA.taxes, store('tax') || FORM_DATA.default_tax, 'Sin IVA');
+    fillSelect(id('c-cat'), FORM_DATA.categories, store('cat') || FORM_DATA.default_category);
+    fillSelect(id('c-brand'), FORM_DATA.brands, store('brand') || 0, 'Sin marca');
+
+    id('c-cat-filter').addEventListener('input', e => {
+      const q = e.target.value.trim().toLowerCase();
+      const current = id('c-cat').value;
+      fillSelect(id('c-cat'), FORM_DATA.categories.filter(c => !q || c.label.toLowerCase().includes(q)), current);
+    });
+    id('create-cancel').addEventListener('click', () => { hideCreate(); eanInput.focus(); });
+    id('btn-new-product').addEventListener('click', () => showCreate(''));
+    id('create-form').addEventListener('submit', submitCreate);
+  }
+
+  function showCreate(ean) {
+    currentProduct = null;
+    foundCard.style.display = 'none';
+    id('create-form').reset();
+    id('c-ean').value = ean || '';
+    id('c-qty').value = 1;
+    id('c-online').checked = store('online') !== '0';
+    id('c-tax').value = store('tax') || FORM_DATA.default_tax;
+    id('c-brand').value = store('brand') || 0;
+    id('c-cat-filter').value = '';
+    fillSelect(id('c-cat'), FORM_DATA.categories, store('cat') || FORM_DATA.default_category);
+    id('create-sub').textContent = ean ? `El código ${ean} no está en la tienda. Crea su ficha:` : 'Crea la ficha de un producto nuevo:';
+    createCard.style.display = 'block';
+    id('c-name').focus();
+  }
+
+  function hideCreate() { if (createCard) createCard.style.display = 'none'; }
+
+  function submitCreate(e) {
+    e.preventDefault();
+    if (!id('c-cat').value) { flashFeedback('error', 'Elige una categoría'); return; }
+    const fd = new FormData(id('create-form'));
+    fd.set('online', id('c-online').checked ? '1' : '0');
+    fd.set('ajax', '1');
+    const btn = id('create-submit');
+    btn.disabled = true; id('create-btn-text').textContent = 'Creando…';
+
+    fetch(LINK + '&ajax=1&action=createProduct', { method: 'POST', body: fd })
+      .then(r => r.text()).then(t => JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)))
+      .then(d => {
+        btn.disabled = false; id('create-btn-text').textContent = 'Crear producto';
+        if (!d.success) { flashFeedback('error', d.error || 'No se pudo crear'); return; }
+        store('cat', id('c-cat').value); store('tax', id('c-tax').value); store('brand', id('c-brand').value);
+        store('online', id('c-online').checked ? '1' : '0');
+        hideCreate();
+        loadProduct(d.product);
+        addRecentItem(d.product, { qty_delta: d.product.qty_stock, qty_after: d.product.qty_stock }, 'in', 'Alta de producto');
+        flashFeedback(d.photo === 'error' ? 'error' : 'ok',
+          `✓ Producto creado (#${d.product.id_product})` + (d.photo === 'error' ? ' · la foto no se pudo guardar' : ''));
+      }).catch(() => {
+        btn.disabled = false; id('create-btn-text').textContent = 'Crear producto';
+        flashFeedback('error', 'Error de red al crear el producto');
+      });
   }
 
   /* ── Product card ───────────────────────────────────────── */
@@ -396,7 +534,7 @@
 
   // Keep focus on scanner input
   document.addEventListener('click', e => {
-    if (!e.target.closest('input, button, a, .ss-result-item')) eanInput.focus();
+    if (!e.target.closest('input, select, textarea, label, button, a, .ss-result-item, .ss-create-card')) eanInput.focus();
   });
 })();
 {/literal}
